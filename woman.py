@@ -3,6 +3,7 @@
 import sys
 import requests
 import pyquery
+import colorama
 
 URL = 'https://explainshell.com/explain'
 
@@ -21,7 +22,16 @@ def parse(page):
     if not results:
         print('manual missing')
     for result in results:
-        print(result.text_content())
+        text = []
+        for element in pq(result).contents():
+            if isinstance(element, str):
+                text.append(element)
+            else:
+                text.append(colorama.Style.BRIGHT)
+                text.append(element.text)
+                text.append(colorama.Style.RESET_ALL)
+        text.append('\n')
+        print(''.join(text))
 
 
 if __name__ == '__main__':
