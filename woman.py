@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 
+'''woman - a command line interface for explainshell.com
+
+Usage: woman <arguments> ...
+Example: woman ls -lAdth
+'''
+
 import sys
 import shutil
 import pyquery
@@ -9,11 +15,13 @@ from urllib.parse import urlencode
 URL = 'https://explainshell.com/explain'
 
 
-def main(argv):
+def main(argv=sys.argv[1:]):
     'Parse command line arguments.'
+    colorama.init()
     if not len(argv):
         print(__doc__)
         return
+
     params = urlencode({'cmd': ' '.join(argv)})
     full_url = URL + '?' + params
     columns = shutil.get_terminal_size().columns
@@ -41,22 +49,28 @@ def parse(*args, **kwargs):
 
 def reflow(text, columns):
     'Fit display to terminal size.'
+    print()
     lines = text.split('\n')
     indent = indent_test(lines[-1])
 
-    # if the first line is not indented
+    # if the first line is not indented, do not append other lines to it
     if not indent_test(lines[0]):
         print(lines.pop(0))
         print(' ' * indent, end='')
+
+    # otherwise, join all the lines to remove the line breaks
+    if not lines:
+        return
     text = ' '.join(line.strip() for line in lines)
 
+    # split into lines again according to the terminal size
     while len(text) > columns:
         delimiter = len(text[:columns].rpartition(' ')[0])
         if not delimiter:
             break
         print(text[:delimiter])
         text = indent * ' ' + text[delimiter:].strip()
-    print(text, end='\n\n')
+    print(text)
 
 
 def indent_test(line):
@@ -90,4 +104,4 @@ def strip_ansi(text):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
