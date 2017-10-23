@@ -56,6 +56,8 @@ def reflow(text, columns):
 
 def indent_test(line):
     'Detect indentation of the given text.'
+    line = strip_ansi(line)
+
     # skip optional non-whitespace characters
     for i, char in enumerate(line):
         if char.isspace():
@@ -69,6 +71,17 @@ def indent_test(line):
             return i + j if j > 1 else 0  # more than one space
     else:  # reached the end of line
         return 0
+
+
+def strip_ansi(text):
+    'Remove ANSI escape codes from the text.'
+    escape_codes = [
+        colorama.Style.BRIGHT,
+        colorama.Style.RESET_ALL,
+    ]
+    for escape_code in escape_codes:
+        text = text.replace(escape_code, '')
+    return text
 
 
 if __name__ == '__main__':
