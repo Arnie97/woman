@@ -43,6 +43,11 @@ def reflow(text, columns):
     'Fit display to terminal size.'
     lines = text.split('\n')
     indent = indent_test(lines[-1])
+
+    # if the first line is not indented
+    if not indent_test(lines[0]):
+        print(lines.pop(0))
+        print(' ' * indent, end='')
     text = ' '.join(line.strip() for line in lines)
 
     while len(text) > columns:
