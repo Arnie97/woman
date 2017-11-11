@@ -56,21 +56,31 @@ def reflow(text, columns):
     # if the first line is not indented, do not append other lines to it
     if not indent_test(lines[0]):
         print(lines.pop(0))
-        print(' ' * indent, end='')
 
     # otherwise, join all the lines to remove the line breaks
     if not lines:
         return
     text = ' '.join(line.strip() for line in lines)
+    plain_text = strip_ansi(text)
 
-    # split into lines again according to the terminal size
-    while len(text) > columns:
-        delimiter = len(text[:columns].rpartition(' ')[0])
-        if not delimiter:
-            break
-        print(text[:delimiter])
-        text = indent * ' ' + text[delimiter:].strip()
-    print(text)
+    # split into words again
+    words = text.split()
+    plain_words = plain_text.split()
+
+    # fit into lines according to the terminal size
+    while len(' '.join(plain_words)) > columns - indent:
+        line_length = indent
+        for i in range(len(plain_words)):
+            line_length += len(plain_words[i]) + 1
+            if line_length > columns:
+                i -= 1
+                print(' ' * indent + ' '.join(words[:i]))
+                words = words[i:]
+                plain_words = plain_words[i:]
+                break
+
+    # print the last line
+    print(' ' * indent + ' '.join(words))
 
 
 def indent_test(line):
