@@ -62,14 +62,28 @@ def reflow(text, columns):
     if not lines:
         return
     text = ' '.join(line.strip() for line in lines)
+    plain_text = strip_ansi(text)
 
     # split into lines again according to the terminal size
-    while len(text) > columns:
-        delimiter = len(text[:columns].rpartition(' ')[0])
-        if not delimiter:
+    while len(plain_text) > columns:
+        wrapped_text = plain_text[:columns].rpartition(' ')[0].rstrip()
+        if not len(wrapped_text):
             break
-        print(text[:delimiter])
-        text = indent * ' ' + text[delimiter:].strip()
+
+        # count spaces in the plain text
+        spaces_before = sum(c == ' ' for c in wrapped_text)
+        # find the corresponding word boundary in the colored text
+        for i, c in enumerate(text):
+            if c == ' ':
+                spaces_before -= 1
+            elif not spaces_before:
+                break
+
+        # print the current line
+        print(text[:i].rstrip())
+        text = indent * ' ' + text[i:].strip()
+        plain_text = strip_ansi(text)
+
     print(text)
 
 
