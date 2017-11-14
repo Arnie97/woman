@@ -48,18 +48,13 @@ def parse(*args, **kwargs):
 
 
 def reflow(text, columns):
-    'Fit display to terminal size.'
+    'Fit the text block into the terminal.'
     print()
     lines = text.split('\n')
     indent = indent_test(lines[-1])
+    spaces = header_test(lines, indent)
 
-    # if the first line is not indented, do not append other lines to it
-    if not indent_test(lines[0]):
-        print(lines.pop(0))
-
-    # otherwise, join all the lines to remove the line breaks
-    if not lines:
-        return
+    # join all the remaining lines to remove the line breaks
     text = ' '.join(line.strip() for line in lines)
     plain_text = strip_ansi(text)
 
@@ -73,14 +68,42 @@ def reflow(text, columns):
         for i in range(len(plain_words)):
             line_length += len(plain_words[i]) + 1
             if line_length > columns:
-                i -= 1
-                print(' ' * indent + ' '.join(words[:i]))
+                print(' ' * spaces + ' '.join(words[:i]))
+                if spaces != indent:
+                    spaces = indent
                 words = words[i:]
                 plain_words = plain_words[i:]
                 break
 
     # print the last line
-    print(' ' * indent + ' '.join(words))
+    print(' ' * spaces + ' '.join(words))
+
+
+def header_test(lines, indent):
+    'Print the header line with proper spaces.'
+    # if the first line contains no options, just reflow it
+    if not strip_ansi(lines[0]).startswith('-'):
+        return indent
+
+    # if the first line contains both options and explanations
+    # keep the option part untouched, but reflow the explanation part
+    elif indent_test(lines[0]) == indent:
+        # count words in the option part, i.e. before the indent
+        words_in_options = strip_ansi(lines[0])[:indent].split()
+        n = len(words_in_options)
+
+        # print the corresponding colored text for that part
+        words = lines[0].split()
+        print(' '.join(words[:n]), end='')
+        lines[0] = ' '.join(words[n:])
+
+        # reduce spaces
+        return indent - len(' '.join(words_in_options))
+
+    # if the first line contains only options, do not reflow it
+    else:
+        print(lines.pop(0))
+        return indent
 
 
 def indent_test(line):
