@@ -13,19 +13,17 @@ import shutil
 import subprocess
 import sys
 import pyquery
-import colorama
 from urllib.parse import urlencode
 
 URL = 'https://explainshell.com/explain'
+ANSI_BRIGHT, ANSI_RESET = '\x1b[1m', '\x1b[0m'
 
 
 def main(argv=sys.argv[1:]):
     'Parse command line arguments.'
-    colorama.init()
     if not len(argv):
         print(__doc__)
         return
-
     params = urlencode({'cmd': ' '.join(argv)})
     full_url = URL + '?' + params
     result = parse(url=full_url)
@@ -44,9 +42,9 @@ def parse(*args, **kwargs):
             if isinstance(element, str):
                 text.append(element)
             else:
-                text.append(colorama.Style.BRIGHT)
+                text.append(ANSI_BRIGHT)
                 text.append(element.text)
-                text.append(colorama.Style.RESET_ALL)
+                text.append(ANSI_RESET)
         yield ''.join(text)
 
 
@@ -147,11 +145,7 @@ def indent_test(line):
 
 def strip_ansi(text):
     'Remove ANSI escape codes from the text.'
-    escape_codes = [
-        colorama.Style.BRIGHT,
-        colorama.Style.RESET_ALL,
-    ]
-    for escape_code in escape_codes:
+    for escape_code in ANSI_BRIGHT, ANSI_RESET:
         text = text.replace(escape_code, '')
     return text
 
