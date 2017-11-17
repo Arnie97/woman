@@ -6,8 +6,12 @@ Usage: woman <arguments> ...
 Example: woman ls -lAdth
 '''
 
-import sys
+import contextlib
+import io
+import os
 import shutil
+import subprocess
+import sys
 import pyquery
 import colorama
 from urllib.parse import urlencode
@@ -24,9 +28,8 @@ def main(argv=sys.argv[1:]):
 
     params = urlencode({'cmd': ' '.join(argv)})
     full_url = URL + '?' + params
-    columns = shutil.get_terminal_size().columns
-    for section in parse(url=full_url):
-        reflow(section, columns)
+    result = parse(url=full_url)
+    pager(result)
 
 
 def parse(*args, **kwargs):
@@ -45,6 +48,23 @@ def parse(*args, **kwargs):
                 text.append(element.text)
                 text.append(colorama.Style.RESET_ALL)
         yield ''.join(text)
+
+
+def pager(sections):
+    'Pipe stdout to the pager.'
+    pager = os.environ.get('MANPAGER') or os.environ.get('PAGER') or 'less -FR'
+    proc = subprocess.Popen(pager, shell=True, stdin=subprocess.PIPE)
+    columns = shutil.get_terminal_size().columns
+    try:
+        with io.TextIOWrapper(proc.stdin, errors='backslashreplace') as pipe:
+            with contextlib.redirect_stdout(pipe):
+                for section in sections:
+                    reflow(section, columns)
+        proc.wait()
+
+    # ignore broken pipes caused by quitting the pager
+    except (KeyboardInterrupt, BrokenPipeError):
+        pass
 
 
 def reflow(text, columns):
