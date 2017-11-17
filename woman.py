@@ -26,8 +26,10 @@ def main(argv=sys.argv[1:]):
         return
     params = urlencode({'cmd': ' '.join(argv)})
     full_url = URL + '?' + params
-    result = parse(url=full_url)
-    pager(result)
+    columns = shutil.get_terminal_size().columns
+    with pager():
+        for section in parse(url=full_url):
+            reflow(section, columns)
 
 
 def parse(*args, **kwargs):
@@ -48,21 +50,18 @@ def parse(*args, **kwargs):
         yield ''.join(text)
 
 
-def pager(sections):
+@contextlib.contextmanager
+def pager():
     'Pipe stdout to the pager.'
     pager = os.environ.get('MANPAGER') or os.environ.get('PAGER') or 'less -FR'
-    proc = subprocess.Popen(pager, shell=True, stdin=subprocess.PIPE)
-    columns = shutil.get_terminal_size().columns
-    try:
+    with subprocess.Popen(pager, shell=True, stdin=subprocess.PIPE) as proc:
         with io.TextIOWrapper(proc.stdin, errors='backslashreplace') as pipe:
             with contextlib.redirect_stdout(pipe):
-                for section in sections:
-                    reflow(section, columns)
-        proc.wait()
-
-    # ignore broken pipes caused by quitting the pager
-    except (KeyboardInterrupt, BrokenPipeError):
-        pass
+                try:
+                    yield
+                # ignore broken pipes caused by quitting the pager
+                except (KeyboardInterrupt, BrokenPipeError):
+                    pass
 
 
 def reflow(text, columns):
